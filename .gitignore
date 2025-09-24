@@ -1,1 +1,5 @@
 .env
+
+services/payments/.venv
+services/analytics/.venv
+services/deliveries/.venv
