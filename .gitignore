@@ -6,3 +6,9 @@ services/deliveries/.venv
 
 services/auth/target
 services/orders/target
+
+services/carts/node_modules
+services/carts/.env
+
+services/notifications/node_modules
+services/notifications/.env
