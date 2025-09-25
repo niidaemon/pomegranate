@@ -3,3 +3,6 @@
 services/payments/.venv
 services/analytics/.venv
 services/deliveries/.venv
+
+services/auth/target
+services/orders/target
