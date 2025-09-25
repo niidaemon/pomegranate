@@ -1,0 +1,404 @@
+services:
+  # Infrastructure Services
+  
+  # Message Queue
+  kafka:
+    build: ./infra/kafka
+    container_name: kafkatest
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CLUSTER_ID=pome
+      - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+    networks:
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Databases
+  postgres:
+    build: ./infra/postgres
+    container_name: pgtest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    build: ./infra/mongo
+    container_name: mongotest
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=dev
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+      - MONGO_INITDB_DATABASE=devdb
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    build: ./infra/redis
+    container_name: redistest
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Reverse Proxy / Load Balancer
+  traefik:
+    build: ./infra/traefik
+    container_name: traefik-dev
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/certs
+    networks:
+      - pomegranate-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+
+  # Monitoring
+  prometheus:
+    build: ./infra/monitoring/prometheus
+    container_name: prometheus-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./infra/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - pomegranate-network
+
+  grafana:
+    build: ./infra/monitoring/grafana
+    container_name: grafana-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - pomegranate-network
+    depends_on:
+      - prometheus
+
+  # Backend Services
+  
+  # Python Services (FastAPI)
+  deliveries:
+    build: ./services/deliveries
+    container_name: deliveries-dev
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGODB_URL=mongodb://dev:pass@mongo:27017/devdb?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.deliveries.rule=PathPrefix(`/api/deliveries`)"
+      - "traefik.http.services.deliveries.loadbalancer.server.port=8001"
+
+  analytics:
+    build: ./services/analytics
+    container_name: analytics-dev
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://dev:pass@postgres:5432/devdb
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.analytics.rule=PathPrefix(`/api/analytics`)"
+      - "traefik.http.services.analytics.loadbalancer.server.port=8002"
+
+  payments:
+    build: ./services/payments
+    container_name: payment-dev
+    ports:
+      - "8005:8005"
+    environment:
+      - DATABASE_URL=postgresql://dev:pass@postgres:5432/devdb
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payments.rule=PathPrefix(`/api/payments`)"
+      - "traefik.http.services.payments.loadbalancer.server.port=8005"
+
+  # Go Services
+  inventory:
+    build: ./services/inventory
+    container_name: inventory-dev
+    ports:
+      - "8004:8004"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=dev
+      - DB_PASSWORD=pass
+      - DB_NAME=devdb
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_ADDR=redis:6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/api/inventory`)"
+      - "traefik.http.services.inventory.loadbalancer.server.port=8004"
+
+  catalog:
+    build: ./services/catalog
+    container_name: catalog-dev
+    ports:
+      - "8006:8006"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=dev
+      - DB_PASSWORD=pass
+      - DB_NAME=devdb
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_ADDR=redis:6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.catalog.rule=PathPrefix(`/api/catalog`)"
+      - "traefik.http.services.catalog.loadbalancer.server.port=8006"
+
+  # Java Services (Spring Boot)
+  orders:
+    build: ./services/orders
+    container_name: orders-dev
+    ports:
+      - "8007:8007"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/devdb
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=pass
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.orders.rule=PathPrefix(`/api/orders`)"
+      - "traefik.http.services.orders.loadbalancer.server.port=8007"
+
+  auth:
+    build: ./services/auth
+    container_name: auth-dev
+    ports:
+      - "8008:8008"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/devdb
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=pass
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
+      - "traefik.http.services.auth.loadbalancer.server.port=8008"
+
+  # Node.js Services (Express)
+  cart:
+    build: ./services/carts
+    container_name: carts-dev
+    ports:
+      - "8009:8009"
+    environment:
+      - DATABASE_URL=postgresql://dev:pass@postgres:5432/devdb
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cart.rule=PathPrefix(`/api/cart`)"
+      - "traefik.http.services.cart.loadbalancer.server.port=8009"
+
+  notifications:
+    build: ./services/notifications
+    container_name: notifications-dev
+    ports:
+      - "8010:8010"
+    environment:
+      - MONGODB_URL=mongodb://dev:pass@mongo:27017/devdb?authSource=admin
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - pomegranate-network
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notifications.rule=PathPrefix(`/api/notifications`)"
+      - "traefik.http.services.notifications.loadbalancer.server.port=8010"
+
+  # Frontend Client
+  web:
+    build: ./clients/web
+    container_name: client-web
+    ports:
+      - "3005:80"  
+    environment:
+      - VITE_API_BASE_URL=http://localhost
+    networks:
+      - pomegranate-network
+    depends_on:
+      - traefik
+      - auth
+      - catalog
+      - cart
+      - orders
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`localhost`)"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
+
+networks:
+  pomegranate-network:
+    driver: bridge
+    name: pomegranate-network
+
+volumes:
+  postgres-data:
+  mongo-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  traefik-certs:

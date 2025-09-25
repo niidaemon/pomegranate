@@ -4,7 +4,7 @@ set -euo pipefail
 IMAGE_NAME="${IMAGE_NAME:-pomegranate-web}"
 CONTAINER_NAME="${CONTAINER_NAME:-client-web}"
 SERVICE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PORT="${PORT:-3000}"                    
+PORT="${PORT:-3005}"                    
 CONTAINER_PORT="${CONTAINER_PORT:-80}"
 RETRIES="${RETRIES:-30}"
 SLEEP="${SLEEP:-2}"
