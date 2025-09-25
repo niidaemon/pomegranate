@@ -9,6 +9,29 @@ services/orders/target
 
 services/carts/node_modules
 services/carts/.env
+services/carts/dist
+services/carts/dist-ssr
+services/carts/*.local
 
 services/notifications/node_modules
 services/notifications/.env
+services/notifications/dist
+services/notifications/dist-ssr
+services/notifications/*.local
+
+clients/web/node_modules
+clients/web/.env
+clients/web/dist 
+clients/web/dist-ssr
+clients/web/*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
