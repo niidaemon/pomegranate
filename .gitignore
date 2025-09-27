@@ -1,26 +1,42 @@
+# Environment Variables
 .env
+services/analytics/.env
+services/auth/.env
+services/carts/.env
+services/catalog/.env
+services/deliveries/.env
+services/inventory/.env
+services/notifications/.env
+services/orders/.env
+services/payments/.env
+infra/kafka/.env
+infra/mongo/.env
+infra/monitoring/grafana/.env
+infra/monitoring/prometheus/.env
+infra/postgres/.env
+infra/redis/.env
+infra/traefik/.env
+clients/web/.env
 
+# Python Environments
 services/payments/.venv
 services/analytics/.venv
 services/deliveries/.venv
 
+# Java Build Targets
 services/auth/target
 services/orders/target
 
+# Node Modules
 services/carts/node_modules
-services/carts/.env
 services/carts/dist
 services/carts/dist-ssr
 services/carts/*.local
-
 services/notifications/node_modules
-services/notifications/.env
 services/notifications/dist
 services/notifications/dist-ssr
 services/notifications/*.local
-
 clients/web/node_modules
-clients/web/.env
 clients/web/dist 
 clients/web/dist-ssr
 clients/web/*.local
