@@ -1,4 +1,4 @@
-<div align="center" style="text-align: center;">
+<div>
     <h1>Pomegranate</h1>
     <p>
         <b>A modern end-to-end microservice e-commerce platform</b>
@@ -7,7 +7,7 @@
     </p>
     <hr>
     <h4>Key Features</h4>
-    <ol style="text-align: left;">
+    <ol>
         <li><b>Microservices Architecture:</b> Loosely coupled services with independent deployment capabilities.</li>
         <li><b>Polyglot Persistence:</b> Implement with multiple programming languages and database systems optimized for different use cases.</li>
         <li><b>Event-Driven Communication:</b> Apache Kafka for asynchronous service communication.</li>
@@ -17,7 +17,7 @@
     </ol>
     <hr>
     <h4>Business Capabilities</h4>
-    <ol style="text-align: left;">
+    <ol>
         <li>User authentication and authorization</li>
         <li>Product catalog management</li>
         <li>Shopping cart functionality</li>
@@ -31,7 +31,7 @@
     <hr>
     <h4>Deployment Guide</h4>
     <h6>Prerequisite</h6>
-    <ul style="text-align: left;">
+    <ul>
         <li>Docker Engine</li>
         <li>Docker Compose</li>
         <li>Minimum 8GB RAM</li>
