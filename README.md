@@ -3,17 +3,17 @@
     <p>
         <b>A modern end-to-end microservice e-commerce platform</b>
         <br>
-        Built with containerized services using Docker and orchestrated with Docker Compose. The platform implements a polyglot architecture, and frameworks optimized for specific business domains with the ability to scale horizontally.
+        Built with containerized services using Docker and orchestrated with Docker Compose. The platform implements a polyglot architecture, and frameworks optimized for specific business domains with the ability to scale on demand.
     </p>
     <hr>
     <h4>Key Features</h4>
     <ol>
         <li><b>Microservices Architecture:</b> Loosely coupled services with independent deployment capabilities.</li>
-        <li><b>Polyglot Persistence:</b> Implement with multiple programming languages and database systems optimized for different use cases.</li>
+        <li><b>Polyglot Persistence:</b> Implemented with multiple programming languages and database systems optimized for different use cases.</li>
         <li><b>Event-Driven Communication:</b> Apache Kafka for asynchronous service communication.</li>
         <li><b>API Gateway:</b> Traefik for intelligent routing and load balancing.</li>
         <li><b>Comprehensive Monitoring:</b> Prometheus and Grafana for metrics and visualization</li>
-        <li><b>Container Orchestration: Docker-based deployment with Docker Compose.</b></li>
+        <li><b>Container Orchestration:</b> Docker-based deployment with Docker Compose.</li>
     </ol>
     <hr>
     <h4>Business Capabilities</h4>
