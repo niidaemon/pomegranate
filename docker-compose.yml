@@ -1,34 +1,167 @@
-services:
-  # Infrastructure Services
-  
-  # Message Queue
-  kafka:
-    build: ./infra/kafka
-    container_name: kafkatest
+services: 
+  # kafka, kraft
+  kafka-1:
+    image: confluentinc/cp-kafka:7.7.5
+    container_name: kafka-1
+    hostname: kafka-1
     ports:
       - "9092:9092"
-      - "9093:9093"
+      - "19092:19092"
     environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_NODE_ID=1
-      - KAFKA_PROCESS_ROLES=broker,controller
-      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CLUSTER_ID=pome
-      - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
-      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:19092'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka-1:9092,CONTROLLER://kafka-1:29092,PLAINTEXT_HOST://0.0.0.0:19092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:29092,2@kafka-2:29093,3@kafka-3:29094'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_CLEANUP_POLICY: delete
+      KAFKA_COMPRESSION_TYPE: producer
+      KAFKA_MESSAGE_MAX_BYTES: 1048576
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
     networks:
       - pomegranate-network
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
 
-  # Databases
-  # Primary Postgres
+  kafka-2:
+    image: confluentinc/cp-kafka:7.7.5
+    container_name: kafka-2
+    hostname: kafka-2
+    ports:
+      - "9093:9093"
+      - "19093:19093"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-2:9093,PLAINTEXT_HOST://localhost:19093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka-2:9093,CONTROLLER://kafka-2:29093,PLAINTEXT_HOST://0.0.0.0:19093'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:29092,2@kafka-2:29093,3@kafka-3:29094'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_CLEANUP_POLICY: delete
+      KAFKA_COMPRESSION_TYPE: producer
+      KAFKA_MESSAGE_MAX_BYTES: 1048576
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+    networks:
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9093"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.7.5
+    container_name: kafka-3
+    hostname: kafka-3
+    ports:
+      - "9094:9094"
+      - "19094:19094"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-3:9094,PLAINTEXT_HOST://localhost:19094'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka-3:9094,CONTROLLER://kafka-3:29094,PLAINTEXT_HOST://0.0.0.0:19094'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:29092,2@kafka-2:29093,3@kafka-3:29094'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_CLEANUP_POLICY: delete
+      KAFKA_COMPRESSION_TYPE: producer
+      KAFKA_MESSAGE_MAX_BYTES: 1048576
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+    networks:
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9094"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # kafka ui 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "9080:9080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pomegranate-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9093,kafka-3:9094
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    networks:
+      - pomegranate-network
+
+  # primary postgres
   postgres-primary:
     image: postgres:18
     container_name: postgres-primary
@@ -58,7 +191,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Postgres Standby 1
+  # postgres standby 1
   postgres-standby-1:
     image: postgres:18
     container_name: postgres-standby-1
@@ -74,7 +207,7 @@ services:
     networks:
       - pomegranate-network
 
-  # Postgres Standby 2
+  # postgres standby 2
   postgres-standby-2:
     image: postgres:18
     container_name: postgres-standby-2
@@ -90,7 +223,7 @@ services:
     networks:
       - pomegranate-network
 
-  # Haproxy - load balancer
+  # haproxy - load balancer
   haproxy:
     image: haproxy:3.2
     container_name: haproxy
@@ -104,8 +237,8 @@ services:
     volumes:
       - ./infra/postgres/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
-      - "5433:5432"   # Primary routing frontend
-      - "5434:5433"   # Replica routing frontend
+      - "5433:5432"   # primary routing frontend
+      - "5434:5433"   # replica routing frontend
       - "8404:8404"   # HAProxy stats dashboard
     networks:
       - pomegranate-network
@@ -116,7 +249,7 @@ services:
       retries: 5
 
 
-  # Pgbouncer - connection pooling
+  # pgbouncer - connection pooling
   pgbouncer:
     image: bitnami/pgbouncer:latest
     container_name: pgbouncer
@@ -142,7 +275,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Postgres Exporter - monitoring
+  # postgres Exporter - monitoring
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: postgres-exporter
@@ -260,7 +393,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -284,7 +417,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -308,7 +441,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -333,7 +466,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -357,7 +490,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -385,7 +518,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -412,7 +545,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -438,7 +571,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -463,7 +596,7 @@ services:
     depends_on:
       pgbouncer:
         condition: service_healthy
-      kafka:
+      kafka-1:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -505,6 +638,9 @@ volumes:
   postgres-standby-1-data:
   postgres-standby-2-data:
   redis-data:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
   prometheus-data:
   grafana-data:
   traefik-certs:
