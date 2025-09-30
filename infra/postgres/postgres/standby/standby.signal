@@ -1,0 +1,7 @@
+# ===================================================================
+# standby.signal
+# ===================================================================
+# This file indicates that the PostgreSQL instance should start
+# in standby mode (replica). The file itself is intentionally empty—
+# its mere presence triggers standby behavior.
+# ===================================================================

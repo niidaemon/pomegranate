@@ -1,0 +1,19 @@
+# ===================================================================
+# PgBouncer User List
+# ===================================================================
+# Format:
+#   "username" "SCRAM-SHA-256$<salt>$<stored_key>:<server_key>"
+#
+# Notes:
+# - Replace the placeholder hashes with real SCRAM-SHA-256 hashes.
+# - Use the generate-pgbouncer-auth.py script to create proper entries.
+# ===================================================================
+
+"auth_service"       "SCRAM-SHA-256$4096:h626uk8E7Q1nNpZbwB7TVQ==$lHg8fWsyx0C4jGTqspXaOMLYWlbAefpGsfRRENCcQ2M=:qlo58HIUYPapAxGONjANNIdcwSQJg/4+M7/izvhopJU="
+"catalog_service"    "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"cart_service"       "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"orders_service"     "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"inventory_service"  "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"payments_service"   "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"analytics_service"  "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"exporter"           "SCRAM-SHA-256$PLACEHOLDER_HASH"

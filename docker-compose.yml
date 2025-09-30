@@ -28,17 +28,29 @@ services:
       retries: 5
 
   # Databases
-  postgres:
-    build: ./infra/postgres
-    container_name: pgtest
+  # Primary Postgres
+  postgres-primary:
+    image: postgres:18
+    container_name: postgres-primary
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=devdb
-      - POSTGRES_USER=dev
-      - POSTGRES_PASSWORD=pass
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command: >
+      postgres
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS}
+      -c shared_buffers=${POSTGRES_SHARED_BUFFERS}
+      -c effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE}
+      -c work_mem=${POSTGRES_WORK_MEM}
+      -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./infra/postgres/postgres/primary/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./infra/postgres/postgres/primary/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./infra/postgres/postgres/init-scripts:/docker-entrypoint-initdb.d
     networks:
       - pomegranate-network
     healthcheck:
@@ -46,6 +58,74 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Postgres Standby 1
+  postgres-standby-1:
+    image: postgres:18
+    container_name: postgres-standby-1
+    depends_on:
+      - postgres-primary
+    volumes:
+      - postgres-standby-1-data:/var/lib/postgresql/data
+      - ./infra/postgres/postgres/standby/postgresql.conf:/etc/postgresql/postgresql.conf
+    networks:
+      - pomegranate-network
+
+  # Postgres Standby 2
+  postgres-standby-2:
+    image: postgres:18
+    container_name: postgres-standby-2
+    depends_on:
+      - postgres-primary
+    volumes:
+      - postgres-standby-2-data:/var/lib/postgresql/data
+      - ./infra/postgres/postgres/standby/postgresql.conf:/etc/postgresql/postgresql.conf
+    networks:
+      - pomegranate-network
+
+  # Pgbouncer - connection pooling
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: pgbouncer
+    depends_on:
+      - haproxy
+    volumes:
+      - ./infra/postgres/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./infra/postgres/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    ports:
+      - "6432:6432"
+    networks:
+      - pomegranate-network
+
+  # Haproxy - load balancer
+  haproxy:
+    image: haproxy:3.2
+    container_name: haproxy
+    depends_on:
+      - postgres-primary
+      - postgres-standby-1
+      - postgres-standby-2
+    volumes:
+      - ./infra/postgres/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5433:5432"   # Primary routing frontend
+      - "5434:5433"   # Replica routing frontend
+      - "8404:8404"   # HAProxy stats dashboard
+    networks:
+      - pomegranate-network  
+
+  # Postgres Exporter - monitoring
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: postgresql://postgres:${POSTGRES_PASSWORD}@postgres-primary:5432/postgres?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres-primary
+    networks:
+      - pomegranate-network
 
   mongo:
     build: ./infra/mongo
@@ -169,7 +249,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -193,7 +273,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -222,7 +302,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -250,7 +330,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -278,7 +358,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -305,7 +385,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -331,7 +411,7 @@ services:
     networks:
       - pomegranate-network
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -396,7 +476,9 @@ networks:
     name: pomegranate-network
 
 volumes:
-  postgres-data:
+  postgres-primary-data:
+  postgres-standby-1-data:
+  postgres-standby-2-data:
   mongo-data:
   redis-data:
   prometheus-data:

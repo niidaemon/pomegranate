@@ -13,7 +13,6 @@ infra/kafka/.env
 infra/mongo/.env
 infra/monitoring/grafana/.env
 infra/monitoring/prometheus/.env
-infra/postgres/.env
 infra/redis/.env
 infra/traefik/.env
 clients/web/.env
