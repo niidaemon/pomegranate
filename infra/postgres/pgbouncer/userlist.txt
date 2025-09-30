@@ -9,11 +9,13 @@
 # - Use the generate-pgbouncer-auth.py script to create proper entries.
 # ===================================================================
 
-"auth_service"       "SCRAM-SHA-256$4096:h626uk8E7Q1nNpZbwB7TVQ==$lHg8fWsyx0C4jGTqspXaOMLYWlbAefpGsfRRENCcQ2M=:qlo58HIUYPapAxGONjANNIdcwSQJg/4+M7/izvhopJU="
-"catalog_service"    "SCRAM-SHA-256$PLACEHOLDER_HASH"
-"cart_service"       "SCRAM-SHA-256$PLACEHOLDER_HASH"
-"orders_service"     "SCRAM-SHA-256$PLACEHOLDER_HASH"
-"inventory_service"  "SCRAM-SHA-256$PLACEHOLDER_HASH"
-"payments_service"   "SCRAM-SHA-256$PLACEHOLDER_HASH"
-"analytics_service"  "SCRAM-SHA-256$PLACEHOLDER_HASH"
-"exporter"           "SCRAM-SHA-256$PLACEHOLDER_HASH"
+"auth_service"              "SCRAM-SHA-256$4096:8pKOl0pNY+jpDoJQ4g0Dzg==$REBUmRF2HpqABWzfKso3fIUXhL0/t4I555tkp7706AE=:S8f8Eo1EoOZn4LWd3fGTw8CR68JOlnk4Gv2/6HUtZTE="
+"catalog_service"           "SCRAM-SHA-256$4096:wNQsBOeXZe+GnX8m6gawMQ==$nwR4WiLdJkHcVfDhQlefgsLkXo3ebkIXgAsvmTQTpeI=:P/yYq/dmvwqgiLlUAMvI0leJ9cpRXmYS5QqzuHCC+dE="
+"cart_service"              "SCRAM-SHA-256$4096:UF5IjVFZj1fNzGKQgKZwBw==$/xd9hccaojTye4ghlNjEEFllW0RGX0P234olhSYP79k=:4D2xiaG4zpKGPaemIhrQqQCUNIrFXkxeL3qdNOuzxiM="
+"orders_service"            "SCRAM-SHA-256$4096:ed+TE+7XIplDAFxswTWF+A==$vyRgEC9rSN+QsDcEiw8D7Cy+xVAuwwqcD+gXTeaT1f0=:5xp+3t7nUmpkCuAGIIEHpKTfqKzVjdit81cW7p5EsJs="
+"inventory_service"         "SCRAM-SHA-256$4096:gc3wA8yd6DhZrwK2rHn77w==$AQhym4Yc7weDEIS8e1ruVl7ZP+X0gFooau/tlKFPI7c=:dZliW02QXtGUVwVgZub68NyPbedoC5H8WpDnf1isiRY="
+"payments_service"          "SCRAM-SHA-256$4096:HFJ8oXNxJWtd+MTvJWQJYg==$+DqZoVQSznno8JPTM4b1ZDlA2IU2gYTkhAn2f7zxdYU=:BD2YWkl/DXdTReqGOk+5ag/u2B4t6+ye7bBB+CDYvu8="
+"analytics_service"         "SCRAM-SHA-256$4096:i2vPuX1jROb6nieEtNvWIA==$L0wNNiyH+34DvbQbEHGzyZVgKAXiKkZiRTTWQxXuGxM=:4F7m/0ndyu87FCd4YIc4vza/SCb4pRXLLpDwStO3Q/A="
+"deliveries_service"        "SCRAM-SHA-256$4096:yqJ44CvY8w40QBsj3N49EA==$DtuicP2IJH1yZ1Dk3lme8iouOlC9laVtlfB9+shWmRI=:XDpWvuGRSn5vQrHb3UUdojFu1LuqT9gGj+PDgFhR6Bs="
+"notifications_service"     "SCRAM-SHA-256$4096:LC78nukt0TAYArNLwrB7DA==$ssHPLhNSswprvH5yUV7dkWgrlaImOd9NZCEKdSdFLEo=:d1tWqBTkzw0sd/jwDOOCugeqWjNLxHEUTh5fs6bwG0s="
+"exporter"                  "SCRAM-SHA-256$4096:zl/GnorqkK35NLWHpAFpRQ==$/9aQ6Vc0BoeqLTtBvFVSnh04mO83M0eQogzj/3Y2vh8=:rapcqy+cJ7MmcxamQhCGYuuZWmisWzwwC9V0MmsW8BM="

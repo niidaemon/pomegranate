@@ -1,32 +1,11 @@
--- ===================================================================
--- PostgreSQL Database Initialization Script
--- ===================================================================
--- This script:
---   1. Installs required extensions
---   2. Creates application databases
---   3. Creates users with appropriate roles
---   4. Grants permissions to service users
--- ===================================================================
-
--- ===================================================================
--- 1. Extensions (installed in the postgres database by default)
--- ===================================================================
 \connect postgres;
 
--- UUID generation support
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Query statistics collection
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
--- Cryptographic functions
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-
--- ===================================================================
--- 2. Databases
--- ===================================================================
--- Create application-specific databases
 CREATE DATABASE auth_db;
 CREATE DATABASE catalog_db;
 CREATE DATABASE cart_db;
@@ -37,31 +16,20 @@ CREATE DATABASE analytics_db;
 CREATE DATABASE deliveries_db;
 CREATE DATABASE notifications_db;
 
-
--- ====================================================================
--- 3. Users and Roles
--- ====================================================================
-
--- Replication user (used by standby servers)
 CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD '${POSTGRES_REPLICATION_PASSWORD}';
 
--- Service users (one per microservice)
-CREATE ROLE auth_service       WITH LOGIN PASSWORD '${AUTH_SERVICE_PASSWORD}';
-CREATE ROLE catalog_service    WITH LOGIN PASSWORD '${CATALOG_SERVICE_PASSWORD}';
-CREATE ROLE cart_service       WITH LOGIN PASSWORD '${CART_SERVICE_PASSWORD}';
-CREATE ROLE orders_service     WITH LOGIN PASSWORD '${ORDERS_SERVICE_PASSWORD}';
-CREATE ROLE inventory_service  WITH LOGIN PASSWORD '${INVENTORY_SERVICE_PASSWORD}';
-CREATE ROLE payments_service   WITH LOGIN PASSWORD '${PAYMENTS_SERVICE_PASSWORD}';
-CREATE ROLE analytics_service  WITH LOGIN PASSWORD '${ANALYTICS_SERVICE_PASSWORD}';
+CREATE ROLE auth_service            WITH LOGIN PASSWORD '${AUTH_SERVICE_PASSWORD}';
+CREATE ROLE catalog_service         WITH LOGIN PASSWORD '${CATALOG_SERVICE_PASSWORD}';
+CREATE ROLE cart_service            WITH LOGIN PASSWORD '${CART_SERVICE_PASSWORD}';
+CREATE ROLE orders_service          WITH LOGIN PASSWORD '${ORDERS_SERVICE_PASSWORD}';
+CREATE ROLE inventory_service       WITH LOGIN PASSWORD '${INVENTORY_SERVICE_PASSWORD}';
+CREATE ROLE payments_service        WITH LOGIN PASSWORD '${PAYMENTS_SERVICE_PASSWORD}';
+CREATE ROLE analytics_service       WITH LOGIN PASSWORD '${ANALYTICS_SERVICE_PASSWORD}';
+CREATE ROLE deliveries_service      WITH LOGIN PASSWORD '${DELIVERIES_SERVICE_PASSWORD}';
+CREATE ROLE notifications_service   WITH LOGIN PASSWORD '${NOTIFICATIONS_SERVICE_PASSWORD}';
 
--- Prometheus exporter user (monitoring only)
 CREATE ROLE exporter WITH LOGIN PASSWORD '${EXPORTER_PASSWORD}';
 
-
--- ================================================================
--- 4. Permissions
--- ================================================================
--- Grant each service user access to its own database
 \connect auth_db;
 GRANT CONNECT ON DATABASE auth_db TO auth_service;
 GRANT USAGE ON SCHEMA public TO auth_service;
@@ -104,10 +72,17 @@ GRANT USAGE ON SCHEMA public TO analytics_service;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO analytics_service;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO analytics_service;
 
--- Monitoring user: grant read-only monitoring privileges
+\connect deliveries_db;
+GRANT CONNECT ON DATABASE deliveries_db TO deliveries_service;
+GRANT USAGE ON SCHEMA public TO deliveries_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO deliveries_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO deliveries_service;
+
+\connect notifications_db;
+GRANT CONNECT ON DATABASE notifications_db TO notifications_service;
+GRANT USAGE ON SCHEMA public TO notifications_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO notifications_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO notifications_service;
+
 \connect postgres;
 GRANT pg_monitor TO exporter;
-
--- ===================================================================
--- End of Initialization Script
--- ===================================================================

@@ -35,10 +35,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
     command: >
       postgres
       -c max_connections=${POSTGRES_MAX_CONNECTIONS}
@@ -65,6 +64,10 @@ services:
     container_name: postgres-standby-1
     depends_on:
       - postgres-primary
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD}
     volumes:
       - postgres-standby-1-data:/var/lib/postgresql/data
       - ./infra/postgres/postgres/standby/postgresql.conf:/etc/postgresql/postgresql.conf
@@ -77,23 +80,13 @@ services:
     container_name: postgres-standby-2
     depends_on:
       - postgres-primary
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_REPLICATION_PASSWORD: ${POSTGRES_REPLICATION_PASSWORD}
     volumes:
       - postgres-standby-2-data:/var/lib/postgresql/data
       - ./infra/postgres/postgres/standby/postgresql.conf:/etc/postgresql/postgresql.conf
-    networks:
-      - pomegranate-network
-
-  # Pgbouncer - connection pooling
-  pgbouncer:
-    image: bitnami/pgbouncer:latest
-    container_name: pgbouncer
-    depends_on:
-      - haproxy
-    volumes:
-      - ./infra/postgres/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
-      - ./infra/postgres/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
-    ports:
-      - "6432:6432"
     networks:
       - pomegranate-network
 
@@ -102,9 +95,12 @@ services:
     image: haproxy:3.2
     container_name: haproxy
     depends_on:
-      - postgres-primary
-      - postgres-standby-1
-      - postgres-standby-2
+      postgres-primary:
+        condition: service_healthy
+      postgres-standby-1:
+        condition: service_started
+      postgres-standby-2:
+        condition: service_started
     volumes:
       - ./infra/postgres/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
@@ -112,7 +108,39 @@ services:
       - "5434:5433"   # Replica routing frontend
       - "8404:8404"   # HAProxy stats dashboard
     networks:
-      - pomegranate-network  
+      - pomegranate-network
+    healthcheck:
+      test: ["CMD", "haproxy", "-v"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # Pgbouncer - connection pooling
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: pgbouncer
+    environment:
+      - POSTGRESQL_HOST=haproxy
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_USERNAME=${POSTGRES_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRESQL_DATABASE=auth_db
+    depends_on:
+      haproxy:
+        condition: service_healthy
+    volumes:
+      - ./infra/postgres/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./infra/postgres/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    ports:
+      - "6432:6432"
+    networks:
+      - pomegranate-network 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Postgres Exporter - monitoring
   postgres-exporter:
@@ -126,25 +154,6 @@ services:
       - postgres-primary
     networks:
       - pomegranate-network
-
-  mongo:
-    build: ./infra/mongo
-    container_name: mongotest
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=dev
-      - MONGO_INITDB_ROOT_PASSWORD=pass
-      - MONGO_INITDB_DATABASE=devdb
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - pomegranate-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     build: ./infra/redis
@@ -219,13 +228,13 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - MONGODB_URL=mongodb://dev:pass@mongo:27017/devdb?authSource=admin
+      - DATABASE_URL=postgres://${DEVELOPER}:${DELIVERIES_SERVICE_PASSWORD}@pgbouncer:6432/deliveries_db
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - REDIS_URL=redis://redis:6379
     networks:
       - pomegranate-network
     depends_on:
-      mongo:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -421,14 +430,14 @@ services:
     ports:
       - "8010:8010"
     environment:
-      - MONGODB_URL=mongodb://dev:pass@mongo:27017/devdb?authSource=admin
+      - DATABASE_URL=postgres://${DEVELOPER}:${NOTIFICATIONS_SERVICE_PASSWORD}@pgbouncer:6432/notifications_db
       - KAFKA_BROKERS=kafka:9092
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
       - pomegranate-network
     depends_on:
-      mongo:
+      pgbouncer:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -471,7 +480,6 @@ volumes:
   postgres-primary-data:
   postgres-standby-1-data:
   postgres-standby-2-data:
-  mongo-data:
   redis-data:
   prometheus-data:
   grafana-data:
