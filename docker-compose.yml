@@ -155,21 +155,45 @@ services:
     networks:
       - pomegranate-network
 
+  # redis 
   redis:
-    build: ./infra/redis
-    container_name: redistest
+    image: redis:bookworm
+    container_name: pomegranate-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 60
+      --timeout 300
+      --maxclients 10000
     volumes:
       - redis-data:/data
+      - .infra/redis/redis.conf:/usr/local/etc/redis/redis.conf
     networks:
       - pomegranate-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 2.5G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
 
   # Reverse Proxy / Load Balancer
   traefik:
