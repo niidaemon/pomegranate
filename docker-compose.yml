@@ -243,7 +243,7 @@ services:
     ports:
       - "8002:8002"
     environment:
-      - DATABASE_URL=postgresql://dev:pass@postgres:5432/devdb
+      - DATABASE_URL=postgres://${DEVELOPER}:${ANALYTICS_SERVICE_PASSWORD}@pgbouncer:6432/analytics_db
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - REDIS_URL=redis://redis:6379
     networks:
@@ -267,7 +267,7 @@ services:
     ports:
       - "8005:8005"
     environment:
-      - DATABASE_URL=postgresql://dev:pass@postgres:5432/devdb
+      - DATABASE_URL=postgres://${DEVELOPER}:${PAYMENTS_SERVICE_PASSWORD}@pgbouncer:6432/payments_db
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - REDIS_URL=redis://redis:6379
     networks:
@@ -292,11 +292,7 @@ services:
     ports:
       - "8004:8004"
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=dev
-      - DB_PASSWORD=pass
-      - DB_NAME=devdb
+      - DATABASE_URL=postgres://${DEVELOPER}:${INVENTORY_SERVICE_PASSWORD}@pgbouncer:6432/inventory_db
       - KAFKA_BROKERS=kafka:9092
       - REDIS_ADDR=redis:6379
     networks:
@@ -320,11 +316,7 @@ services:
     ports:
       - "8006:8006"
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=dev
-      - DB_PASSWORD=pass
-      - DB_NAME=devdb
+      - DATABASE_URL=postgres://${DEVELOPER}:${CATALOG_SERVICE_PASSWORD}@pgbouncer:6432/catalog_db
       - KAFKA_BROKERS=kafka:9092
       - REDIS_ADDR=redis:6379
     networks:
@@ -342,16 +334,16 @@ services:
       - "traefik.http.routers.catalog.rule=PathPrefix(`/api/catalog`)"
       - "traefik.http.services.catalog.loadbalancer.server.port=8006"
 
-  # Java Services (Spring Boot)
+  # Java Services 
   orders:
     build: ./services/orders
     container_name: orders-dev
     ports:
       - "8007:8007"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/devdb
-      - SPRING_DATASOURCE_USERNAME=dev
-      - SPRING_DATASOURCE_PASSWORD=pass
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pgbouncer:6432/orders_db
+      - SPRING_DATASOURCE_USERNAME=${DEVELOPER}
+      - SPRING_DATASOURCE_PASSWORD=${ORDERS_SERVICE_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
@@ -376,9 +368,9 @@ services:
     ports:
       - "8008:8008"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/devdb
-      - SPRING_DATASOURCE_USERNAME=dev
-      - SPRING_DATASOURCE_PASSWORD=pass
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pgbouncer:6432/auth_db
+      - SPRING_DATASOURCE_USERNAME=${DEVELOPER}
+      - SPRING_DATASOURCE_PASSWORD=${AUTH_SERVICE_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
@@ -404,7 +396,7 @@ services:
     ports:
       - "8009:8009"
     environment:
-      - DATABASE_URL=postgresql://dev:pass@postgres:5432/devdb
+      - DATABASE_URL=postgres://${DEVELOPER}:${CART_SERVICE_PASSWORD}@pgbouncer:6432/cart_db
       - KAFKA_BROKERS=kafka:9092
       - REDIS_HOST=redis
       - REDIS_PORT=6379

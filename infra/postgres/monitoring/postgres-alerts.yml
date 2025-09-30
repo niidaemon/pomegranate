@@ -1,0 +1,51 @@
+# ===================================================================
+# Prometheus Alert Rules for PostgreSQL
+# ===================================================================
+# Purpose:
+#   Define alerting rules for PostgreSQL health, replication, and
+#   connection usage. These rules are evaluated by Prometheus and
+#   can be integrated with Alertmanager for notifications.
+# ===================================================================
+
+groups:
+  - name: postgresql
+    interval: 30s
+    rules:
+      # -------------------------------------------------------------
+      # Alert: PostgreSQLDown
+      # Fires if the pg_up metric indicates the instance is unreachable
+      # -------------------------------------------------------------
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL instance down"
+          description: "The PostgreSQL exporter reports the instance is not responding."
+
+      # -------------------------------------------------------------
+      # Alert: PostgreSQLReplicationLag
+      # Fires if replication lag exceeds 30 seconds for more than 5 minutes
+      # -------------------------------------------------------------
+      - alert: PostgreSQLReplicationLag
+        expr: pg_replication_lag_seconds > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High replication lag"
+          description: "Replication lag has exceeded 30 seconds for over 5 minutes."
+
+      # -------------------------------------------------------------
+      # Alert: PostgreSQLTooManyConnections
+      # Fires if more than 80% of max connections are in use for 5 minutes
+      # -------------------------------------------------------------
+      - alert: PostgreSQLTooManyConnections
+        expr: sum(pg_stat_database_numbackends) / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Connection pool usage high"
+          description: "More than 80% of PostgreSQL connections are in use."

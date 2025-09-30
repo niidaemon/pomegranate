@@ -1,0 +1,112 @@
+{
+  "id": null,
+  "uid": "postgres-cluster-dashboard",
+  "title": "PostgreSQL Cluster Monitoring",
+  "tags": ["postgres", "ha", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Database Cluster Status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        { "expr": "pg_up" },
+        { "expr": "pg_stat_replication" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "graph",
+      "title": "Connection Count",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        { "expr": "sum(pg_stat_database_numbackends) by (datname)" }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 12, "h": 6 }
+    },
+    {
+      "type": "graph",
+      "title": "Replication Lag",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        { "expr": "pg_replication_lag_seconds" }
+      ],
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 }
+    },
+    {
+      "type": "gauge",
+      "title": "Cache Hit Ratio",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(pg_stat_database_blks_hit) / (sum(pg_stat_database_blks_hit) + sum(pg_stat_database_blks_read))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "green", "value": 0.95 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 12, "y": 4, "w": 6, "h": 6 }
+    },
+    {
+      "type": "graph",
+      "title": "Database Size",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        { "expr": "pg_database_size_bytes" }
+      ],
+      "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 }
+    },
+    {
+      "type": "graph",
+      "title": "Transaction Rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        { "expr": "rate(pg_stat_database_xact_commit[5m])" }
+      ],
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 6 }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  }
+}
