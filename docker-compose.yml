@@ -182,7 +182,7 @@ services:
       - postgres-primary-data:/var/lib/postgresql/data
       - ./infra/postgres/postgres/primary/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./infra/postgres/postgres/primary/pg_hba.conf:/etc/postgresql/pg_hba.conf
-      - ./infra/postgres/postgres/init-scripts:/docker-entrypoint-initdb.d
+      - ./infra/postgres/postgres/init-scripts:/docker-entrypoint-initdb.d:Z
     networks:
       - pomegranate-network
     healthcheck:

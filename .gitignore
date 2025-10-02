@@ -15,7 +15,6 @@ infra/monitoring/grafana/.env
 infra/monitoring/prometheus/.env
 infra/redis/.env
 infra/traefik/.env
-infra/postgres/postgres/init-scripts/.env
 clients/web/.env
 
 # Python Environments
