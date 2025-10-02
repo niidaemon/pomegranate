@@ -13,4 +13,10 @@ psql -v ON_ERROR_STOP=1 \
      -d catalog_db \
      -f /docker-entrypoint-initdb.d/catalog-schema.sql
 
+psql -v ON_ERROR_STOP=1 \
+     -U "$POSTGRES_USER" \
+     -d inventory_db \
+     -f /docker-entrypoint-initdb.d/catalog-schema.sql
+
+
 echo "✅ Schemas loaded successfully....."
