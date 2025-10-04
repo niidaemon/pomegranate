@@ -1,0 +1,158 @@
+spring:
+    application:
+        name: ${AUTH_SERVICE_NAME}
+    profiles:
+        active: ${SPRING_ACTIVE_PROFILE}
+
+    datasource:
+        url: ${SPRING_DATASOURCE_URL}
+        username: ${SPRING_DATASOURCE_USERNAME}
+        password: ${SPRING_DATASOURCE_PASSWORD}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 30000
+            idle-timeout: 600000
+            max-lifetime: 1800000
+
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                format_sql: true
+                default_schema: public
+                jdbc:
+                    time_zone: UTC
+
+    flyway:
+        enabled: true
+        baseline-on-migrate: true
+        locations: classpath:db/migration
+        validate-on-migrate: true
+
+    data:
+        redis:
+            host: ${REDIS_HOST}
+            port: ${REDIS_PORT}
+            password: ${REDIS_PASSWORD}
+            database: 0
+            timeout: 600000ms
+            lettuce:
+                pool:
+                    max-active: 20
+                    max-idle: 10
+                    min-idle: 5
+
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+      producer:
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        acks: all
+        retries: 3
+      consumer:
+        group-id: auth-service
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+        auto-offset-reset: earliest
+        properties:
+            spring.json.trusted.packages: com.pomegranate.auth.event  
+
+    mail:
+        host: ${MAIL_HOST}
+        port: ${MAIL_PORT}
+        username: ${MAIL_USER}
+        password: ${MAIL_PASSWORD}
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                starttls:
+                    enable: true
+
+server:
+    port: ${SERVER_PORT}
+    servlet:
+        context-path: /api
+    error:
+        include-message: always
+        include-stacktrace: never
+
+app:
+    jwt:
+        secret: ${JWT_SECRET}
+        issuer: auth.pomegranate.com
+        audience: pomegranate-api
+        access-token-expiry: 900 
+        refresh-token-expiry: 604800 
+  
+    encryption:
+        key: ${ENCRYPTION_KEY}
+        algorithm: AES/GCM/NoPadding
+  
+    security:
+        password:
+            min-length: 12
+            max-length: 128
+            require-uppercase: true
+            require-lowercase: true
+            require-digit: true
+            require-special-char: true
+            history-count: 5
+    
+        account-lockout:
+            max-attempts: 5
+            lockout-duration: 30 
+    
+        session:
+            max-concurrent-sessions: 5
+            timeout: 15 
+    
+        rate-limit:
+            login-attempts: 5
+            login-window: 900 
+            registration-attempts: 3
+            registration-window: 3600 
+  
+    oauth:
+        google:
+        client-id: ${GOOGLE_CLIENT_ID}
+        client-secret: ${GOOGLE_CLIENT_SECRET}
+    facebook:
+        client-id: ${FACEBOOK_CLIENT_ID}
+        client-secret: ${FACEBOOK_CLIENT_SECRET}
+    apple:
+        client-id: ${APPLE_CLIENT_ID}
+        client-secret: ${APPLE_CLIENT_SECRET}
+  
+    geoip:
+        database-path: ${GEOIP_DB_PATH}
+  
+    frontend:
+        url: ${FRONTEND_URL}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics,prometheus
+    endpoint:
+        health:
+            show-details: when-authorized
+    prometheus:
+        metrics:
+            export:
+                enabled: true
+
+logging:
+    level:
+        root: INFO
+        com.pomegranate.auth: DEBUG
+        org.springframework.security: DEBUG
+        org.hibernate.SQL: DEBUG
+    pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
